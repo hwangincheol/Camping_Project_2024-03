@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.camping.mapper.CampingMapper">
+
+<select id="getList" resultType="com.camping.domain.CampingVO">
+<![CDATA[
+    select * from BOARD_INQUIRY where board_no > 0 order by board_no asc
+    ]]>
+</select>
+
+<insert id="insert">
+	insert into BOARD_INQUIRY (board_no, board_title, board_content, mem_id)
+	values (board_no.nextval, #{board_title}, #{board_content}, #{mem_id})
+</insert>
+	
+<insert id="insertSelectKey">
+	
+	<selectKey keyProperty="board_no" order="BEFORE" resultType="Long">
+		select board_no.nextval from dual
+	</selectKey>
+	
+	insert into BOARD_INQUIRY(board_no, board_title, board_content, mem_id)
+	values (#{board_no}, #{board_title}, #{board_content}, #{mem_id})
+</insert>
+	
+	<select id="read" resultType="com.camping.domain.CampingVO">
+	select * from BOARD_INQUIRY where board_no = #{board_no}
+	</select> 
+	
+	<delete id="delete">
+		delete from BOARD_INQUIRY where board_no = #{bno}
+	</delete>
+	
+	<update id="update">
+		update BOARD_INQUIRY
+		set board_title = #{board_title},
+		board_content = #{board_content},
+		board_updateDate = SYSDATE
+		where board_no = #{board_no}
+	</update>
+	
+			<sql id="criteria">
+			<trim prefix="(" suffix=") AND " prefixOverrides="OR">
+				<foreach item='type' collection="typeArr">
+					<trim prefix="OR">
+						<choose>
+							<when test="type == 'T'.toString()">
+								board_title like '%'||#{keyword}||'%'
+							</when>
+							<when test="type == 'C'.toString()">
+								board_content like '%'||#{keyword}||'%'
+							</when>
+							<when test="type == 'W'.toString()">
+								mem_id like '%'||#{keyword}||'%'
+							</when>
+						</choose>
+					</trim>
+				</foreach>
+			</trim>
+		</sql>
+		
+		
+	<select id="getListWithPaging" resultType="com.camping.domain.CampingVO">
+		<![CDATA[
+		select
+		board_no, board_title, board_content, board_date, board_updateDate, board_hit, mem_id
+		from
+			(
+			select /*+INDEX_DESC(table_inquiry pk_board_inquiry) */
+				rownum rn, board_no, board_title, board_content, board_date, board_updateDate, board_hit, mem_id
+			from
+				board_inquiry
+			where 
+			]]>
+			
+			<trim prefix="(" suffix=") AND " prefixOverrides="OR">
+				<foreach item='type' collection="typeArr">
+					<trim prefix="OR">
+						<choose>
+							<when test="type == 'T'.toString()">
+								board_title like '%'||#{keyword}||'%'
+							</when>
+							<when test="type == 'C'.toString()">
+								board_content like '%'||#{keyword}||'%'
+							</when>
+							<when test="type == 'W'.toString()">
+								mem_id like '%'||#{keyword}||'%'
+							</when>
+						</choose>
+					</trim>
+				</foreach>
+			</trim> 	
+			
+			<![CDATA[
+				rownum <= #{pageNum} * #{amount}
+				)
+			where rn > (#{pageNum} -1) * #{amount}
+			]]>
+	</select>
+	
+
+	<select id="getTotalCount" resultType="int">
+		select count(*) from board_inquiry where board_no > 0
+	</select>
+	
+	
+	
+</mapper>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mydatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="com.camping.mapper.ReviewBoardMapper">
+
+	<resultMap type="com.camping.domain.BoardVO" id="mapping_list" >
+	    <result property="board_no" column="board_no"/>
+	    <result property="board_title" column="board_title"/>
+	    <result property="board_content" column="board_content"/>
+	    <result property="board_date" column="board_date"/>
+	    <result property="board_updateDate" column="board_updateDate"/>
+	    <result property="board_hit" column="board_hit"/>
+	</resultMap>
+  
+<select id="getList" resultType="com.camping.domain.BoardVO">
+	<![CDATA[
+	select * from board_review where board_no > 0 
+	]]>
+</select>
+
+<insert id="insert">
+	insert into board_review (board_no, board_title, board_content, mem_id)
+		 values (#{board_no}, #{board_title}, #{board_content}, #{mem_id})
+</insert>
+
+<insert id="insertSelectKey">
+	<selectKey keyProperty="board_no" order="BEFORE" resultType="int">
+	select seq_BOARD_REVIEW.nextval from dual
+	</selectKey>
+	insert into board_review (board_no, board_title, board_content, mem_id, board_hit)
+	 values (#{board_no}, #{board_title}, #{board_content}, #{mem_id}, #{board_hit}) 
+</insert>
+
+<select id="read" resultType="com.camping.domain.BoardVO">
+	 <![CDATA[
+	select * from board_review where board_no = #{board_no}
+	]]>
+</select>
+
+<delete id="delete">
+	delete from board_review where board_no = #{board_no}
+</delete>
+
+<update id="update">
+	update board_review
+	set board_title=#{board_title},
+	board_content=#{board_content},
+	board_updateDate = sysdate,
+	board_hit=#{board_hit}
+	where board_no=#{board_no}
+</update>
+
+<select id="getListWithPaging" resultType="com.camping.domain.BoardVO">
+	<![CDATA[
+	select board_no, board_title, board_content, mem_id, board_date, board_updateDate, board_hit
+	 from
+	 (select /*+index_desc(board_review PK_BOARD_REVIEW) */
+	 rownum rn, board_no, board_title, board_content, mem_id, board_date, board_updateDate, board_hit
+	 from board_review where 
+	]]>
+	<trim prefix="(" suffix=") and " prefixOverrides="or">
+		<foreach item='type' collection="typeArr">
+			<trim prefix="or">
+				<choose>
+					<when test="type == 'T'.toString()">
+						board_title like '%'||#{keyword}||'%'
+					</when>
+					<when test="type == 'C'.toString()">
+						board_content like '%'||#{keyword}||'%'
+					</when>
+					<when test="type == 'W'.toString()">
+						mem_id like '%'||#{keyword}||'%'
+					</when>
+				</choose>
+			</trim>
+		</foreach>
+	</trim>
+
+	<![CDATA[ 
+		 rownum <= #{pageNum} * #{amount}
+		 )
+		 where rn > (#{pageNum} -1) * #{amount}
+	]]>
+</select>
+
+<select id="getTotalCount" resultType="int">
+select count(*) from board_review where board_no > 0
+</select>
+
+<update id="increaseViewCount">
+    <![CDATA[
+    update board_review 
+    set board_hit = board_hit + 1 
+    where board_no = #{board_no}
+    ]]>
+</update>
+
+</mapper>

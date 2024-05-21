@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+
+	<!-- 클래스들 빈(객체) 등록 -->
+	<bean id="customAccessDenied"
+		class="com.camping.security.CustomAccessDeniedHandler"></bean> <!-- 멤버가 어드민으로 접근 시 -->
+	
+	 <!-- 로그인 성공 시 -->
+	<bean id="customLoginSuccess"
+		class="com.camping.security.CustomLoginSuccessHandler">
+		<property name="username" value="mem_id" /> <!-- name = input 태그의 아이디, value = db 아이디 -->
+		<property name='defaultUrl' value="/" /> <!-- 기본 경로 /sample/all -->
+
+	</bean>
+	<!-- <bean id="customPasswordEncoder" class="org.zerock.security.CustomNoOpPasswordEncoder"></bean> -->
+	
+	<!-- 로그인 실패 -->
+	<bean id="customLoginFailure" class="com.camping.security.CustomLoginFailureHandler"> 
+		<property name="username" value="mem_id" /> 
+		<property name="password" value="mem_pw" /> 
+		<property name="errorMsgName" value="errorMsg" /> 
+		<property name="defaultFailureUrl" value="/member/customLogin?error" /> </bean>
+
+	<bean id="bcryptPasswordEncoder"
+		class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder" /> <!-- 패스워드 보호 -->
+
+	<bean id="customUserAuthenticationProvider" class="com.camping.security.CustomAuthenticationProvider"></bean>
+
+	<bean id="customUserDetailsService"
+		class="com.camping.security.CustomUserDetailsService"></bean>
+
+
+
+	<!-- 웹 시큐리티 동작 -->
+	<security:http>
+		<!-- 특정한 URI에 접근할 때 인터셉터를 이용해 접근 제한하는 설정: security:intercepturl -->
+		<!-- pattern: URI 패턴 -->
+
+		<security:intercept-url pattern="/"
+			access="permitAll" /> <!-- 모든 사용자에게 허용 -->
+		<!-- "/sample/all" 패턴의 URL에 대한 접근을 "permitAll"로 설정 -->
+
+		<security:intercept-url
+			pattern="/sample/member" access="hasRole('ROLE_MEMBER')" /> <!-- 특정한 url에 접근을 제한함 -->
+		<!-- hasRole([Role]): 해당 권한이 있으면 'true' -->
+
+		<security:intercept-url pattern="/sample/admin"
+			access="hasRole('ROLE_ADMIN')" />
+
+		<!-- 최종적으로는 CommonController로 넘어가서 /accessError를 처리하도록 지정해야 함 -->
+		<!-- URI 변경됨 -->
+		<!-- 경로: security-context.xml -> CustomAccessDeniedHandler.java -> CommonController.java -->
+		<security:access-denied-handler
+			ref="customAccessDenied" /> <!-- security:access-denied-handler: 인터페이스의 구현체를 지정하거나 error-page를 지정 -->
+
+		<!-- <security:form-login login-page="/customLogin" /> <security:csrf disabled="true"/> -->
+
+		<!-- 특정 경로를 지정해서 커스텀 로그인 페이지를 사용하도록 함 -->
+		<!-- 최종적으로는 Controller로 넘어가서 /customLogin을 처리하는 동시에, 성공 시 CustomLoginSuccess에서 
+			동작하도록 지정해야 함 authentication-failure-handler-ref="customLoginFailure" -->
+		<!-- default-target-url="/sample/all" username-parameter="mem_id" password-parameter="mem_pw" 
+			login-processing-url="/login" --> <!-- 이거 지웠더니 /accessError로 가는 문제 해결함 왜지? -->
+		<security:form-login login-page="/member/customLogin" 
+		authentication-success-handler-ref="customLoginSuccess" 
+		authentication-failure-handler-ref="customLoginFailure"/>
+		<!-- username-parameter: input 태그의 아이디 혹은 이메일 name 속성값 -->
+		<!--password-parameter: input 태그의 비밀번호 속성값 -->
+		<!-- login-processing-url: form 태그의 action 속상값의 기본값 -->
+		<!-- login-page: 로그인 페이지 url -->
+		<!-- default-target-url: 로그인 성공 시 가게 될 페이지 -->
+		<!-- /login: customLogin에서 받은 로그인 입력 정보 요청 받음 -->
+
+
+		<!-- 게시물 작성 시 로그인 페이지로 이동, 로그인 후에 다시 게시물 작성 페이지로 이동 -->
+		<!-- <security:form-login login-page="/customLogin" /> -->
+
+		<!-- 로그아웃 처리 엔드포인트 지정 및 쿠키 삭제 -->
+		<!-- 로그아웃 페이지 지정: 추후 메인 페이지로 변경 필요 -->
+		<security:logout logout-url="/customLogout"
+			invalidate-session="true" delete-cookies="remember-me,JSESSION_ID"
+			logout-success-url="/" />
+
+
+		<!-- 자동로그인 -->
+		<security:remember-me
+			data-source-ref="dataSource" token-validity-seconds="604800" />
+
+		<!-- URI 변경 안 됨 -->
+		<!-- <security:access-denied-handler error-page="/accessError" /> --> <!-- CommonController로 넘어가서 /accessError를 처리하도록 지정해야 함 -->
+
+
+		<!-- <security:form-login /> -->
+
+
+		<!-- <security:csrf disabled="true" /> -->
+	</security:http>
+
+	<security:authentication-manager>
+		<security:authentication-provider
+			ref="customUserAuthenticationProvider" />
+		<security:authentication-provider
+			user-service-ref="customUserDetailsService">
+
+			<security:password-encoder
+				ref="bcryptPasswordEncoder" />
+
+		</security:authentication-provider>
+	</security:authentication-manager>
+
+	<!-- <security:authentication-manager> <security:authentication-provider> 
+		<security:user-service> <security:user name="member" password="{noop}member" 
+		authorities="ROLE_MEMBER"/> <security:user name="admin" password="{noop}admin" 
+		authorities="ROLE_MEMBER, ROLE_ADMIN"/> </security:user-service> </security:authentication-provider> 
+		</security:authentication-manager> -->
+
+	<!-- <security:authentication-manager> <security:authentication-provider> 
+		<security:jdbc-user-service data-source-ref="dataSource" /> -->
+	<!-- <security:jdbc-user-service data-source-ref="dataSource" users-by-username-query="select 
+		mem_id , mem_pw from member where mem_id = ? " authorities-by-username-query="select 
+		mem_id, auth from member_auth where mem_id = ? " /> <security:password-encoder 
+		ref="customPasswordEncoder" /> <security:password-encoder ref="bcryptPasswordEncoder" 
+		/> </security:authentication-provider> </security:authentication-manager> 
+		<security:authentication-manager> <security:authentication-provider user-service-ref="customUserDetailsService"> 
+		<security:authentication-provider> <security:jdbc-user-service data-source-ref="dataSource" 
+		/> <security:password-encoder ref="bcryptPasswordEncoder" /> </security:authentication-provider> 
+		</security:authentication-manager> -->
+
+</beans>

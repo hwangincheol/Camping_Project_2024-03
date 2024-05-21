@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.camping.mapper.Notice_AttachMapper">
+
+	<insert id="insert">
+	insert into NOTICE_ATTACH (ATTACH_UUID, ATTACH_PATH, ATTACH_NAME, ATTACH_TYPE, BOARD_NO)
+	values (#{attach_uuid}, #{attach_path}, #{attach_name}, #{attach_Type}, #{board_no} )	
+	</insert>
+
+	<delete id="delete">
+
+	delete from NOTICE_ATTACH where ATTACH_UUID = #{attach_uuid}
+
+	</delete>
+
+	<select id="findByBno" resultType="com.camping.domain.Notice_AttachVO">
+	select * from NOTICE_ATTACH where BOARD_NO = #{board_no}
+	</select>
+	
+	<delete id="deleteAll">
+	
+	delete NOTICE_ATTACH where BOARD_NO = #{board_no}
+	
+	</delete>
+
+</mapper>

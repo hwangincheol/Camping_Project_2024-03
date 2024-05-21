@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.camping.mapper.MemberMapper">
+
+
+	<resultMap type="com.camping.domain.MemberVO" id="memberMap">
+		<id property="mem_id" column="mem_id" />
+		<result property="mem_id" column="mem_id" />
+		<result property="mem_pw" column="mem_pw" />
+		<result property="mem_name" column="mem_name" />
+		<result property="mem_email" column="mem_email" />
+		<result property="mem_tel" column="mem_tel" />
+		<result property="mem_date" column="mem_date" />
+		<result property="mem_enabled" column="mem_enabled" />
+		<collection property="authList" resultMap="authMap">
+		</collection>
+	</resultMap>
+
+	<resultMap type="com.camping.domain.AuthVO" id="authMap">
+		<result property="mem_id" column="mem_id" />
+		<result property="auth" column="auth" />
+	</resultMap>
+	
+	<select id="read" resultMap="memberMap">
+		SELECT
+		mem.mem_id, mem_pw, mem_name,
+		mem_email, mem_tel, mem_date, mem_enabled,
+		auth.auth
+		FROM
+		member mem LEFT
+		OUTER JOIN member_auth auth on mem.mem_id = auth.mem_id
+		WHERE
+		mem.mem_id = #{mem_id, jdbcType=VARCHAR}
+	</select>
+	
+	<select id="findIdByNameAndPhoneNumber" resultMap="memberMap" parameterType="com.camping.domain.MemberVO">
+		    SELECT
+		    mem.mem_id, mem_pw, mem_name,
+		    mem_email, mem_tel, mem_date, mem_enabled,
+		    auth.auth
+		    FROM
+		    member mem
+		    LEFT OUTER JOIN member_auth auth on mem.mem_id = auth.mem_id
+		    WHERE
+		    mem.mem_name = #{mem_name, jdbcType=VARCHAR}
+		    AND mem.mem_tel = #{mem_tel, jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getTemporaryPasswordInformation" resultMap="memberMap" parameterType="com.camping.domain.MemberVO">
+		    SELECT
+		    mem.mem_id, mem_pw, mem_name,
+		    mem_email, mem_tel, mem_date, mem_enabled,
+		    auth.auth
+		    FROM
+		    member mem
+		    LEFT OUTER JOIN member_auth auth on mem.mem_id = auth.mem_id
+		    WHERE
+		    mem.mem_name = #{mem_name, jdbcType=VARCHAR}
+		    AND mem.mem_tel = #{mem_tel, jdbcType=VARCHAR}
+		    AND mem.mem_email = #{mem_email, jdbcType=VARCHAR}
+	</select>
+	
+	<select id="checkId" parameterType="com.camping.domain.MemberVO" resultType="int">
+		    SELECT
+		    count(mem_id)
+		    FROM
+		    member
+		    WHERE mem_id = #{mem_id}
+	</select>
+	
+	<select id="checkEmail" resultMap="memberMap" parameterType="com.camping.domain.MemberVO">
+		    SELECT
+		    mem_id, mem_email
+		    FROM
+		    member
+		    WHERE mem_id = #{mem_id}
+	</select>
+	
+	<update id="update">
+		UPDATE MEMBER
+		SET
+		MEM_PW = #{mem_pw},
+		MEM_EMAIL = #{mem_email},
+		MEM_TEL = #{mem_tel}
+		WHERE MEM_ID = #{mem_id}
+	</update>
+<!-- MEM_PW = #{MEM_PW, jdbcType=VARCHAR}, -->
+	<update id="updateFailureCount">
+  		<![CDATA[
+  		UPDATE
+  			member
+		SET
+			MEM_FAILURE_CNT = MEM_FAILURE_CNT + 1
+		WHERE
+			mem_id = #{mem_id, jdbcType=VARCHAR}	
+			]]>
+	</update>
+	
+	<!-- 회원탈퇴 -->
+	<delete id="deleteMember">
+		delete from member where mem_id = #{mem_id}
+	</delete>
+	<delete id="deleteAuth">
+		delete from member_auth where mem_id = #{mem_id}
+	</delete>
+	<!-- <select id="checkFailureCount">
+		SELECT
+		MEM_FAILURE_CNT
+		FROM
+		member
+		WHERE
+		mem_id = #{mem_id, jdbcType=VARCHAR}
+	</select> -->
+
+	<update id="updateFailureCountReset">
+  	<![CDATA[
+        UPDATE member
+        SET MEM_FAILURE_CNT = 0
+        WHERE mem_id = #{mem_id, jdbcType=VARCHAR}
+    ]]>
+	</update> <!-- 부적합한 유형 1111: ID -> mem_id 컬럼명 확인 필수, varchar의 경우 jdbcType을 지정한다 해서 
+		한 번 넣어봄 에러 해결. -->
+	
+	
+	<!-- 회원가입 -->
+	<!-- parameterType="com.camping.domain.MemberVO" -->	
+	<insert id="insertMember" parameterType="com.camping.domain.MemberVO">  
+		<![CDATA[insert into member 
+		(mem_id, mem_pw, mem_name, mem_email, mem_tel, mem_date) 
+		values (#{mem_id, jdbcType=VARCHAR}, 
+		#{mem_pw, jdbcType=VARCHAR}, 
+		#{mem_name, jdbcType=VARCHAR}, 
+		#{mem_email, jdbcType=VARCHAR}, 
+		#{mem_tel, jdbcType=VARCHAR}, sysdate)
+	]]>
+	</insert>
+	
+	<insert id="insertAuth" parameterType="com.camping.domain.AuthVO">
+    	<!-- 회원의 기본 권한 삽입 -->
+   		<![CDATA[INSERT INTO member_auth (mem_id, auth)
+    	VALUES (#{mem_id, jdbcType=VARCHAR}, #{auth})
+    	]]>
+	</insert>
+	<!-- 아이디 중복 체크 -->
+	<!-- <select id="checkId" parameterType="String" resultType="int">
+		SELECT COUNT(*) FROM member WHERE mem_id = #{mem_id}
+	</select> -->
+	
+</mapper>
