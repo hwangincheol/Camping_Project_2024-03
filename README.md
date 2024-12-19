@@ -1,6 +1,6 @@
 # 캠핑장 예약 웹 사이트 (팀 프로젝트)
 ## ㅁ 프로젝트 요약
-![황인철 프로젝트003](https://github.com/user-attachments/assets/098c45a0-ad40-4acd-abd0-51e6346b6e82)
+![황인철 프로젝트001003](https://github.com/user-attachments/assets/30be338e-f79b-4e8f-86c2-4a920d294bdb)
 ![황인철 프로젝트004](https://github.com/user-attachments/assets/6a975d36-6ed3-43e0-bcb4-c9dd9830bec6)
 <br>
 
